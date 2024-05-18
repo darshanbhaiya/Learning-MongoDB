@@ -1,0 +1,162 @@
+document based database => scalability and flexibility
+
+mongoDB cluster => configure mongodb in a machine
+
+managed mongodb service
+
+we have to create databases in a cluster
+
+databases  => collections => documents(java sript object) => fields
+
+it is not necessary schema(structure) should be same
+
+
+mongoDB compass => used for visualization
+
+mongoDB Atlas => managed service => mongoDB on cloud
+
+
+
+###################### Commands / queries
+
+
+mongod => is to manage all the MongoDB server tasks.
+
+mongosh => to open in terminal default server
+
+show dbs => to show data bases in a server/instance
+
+use employees => to use that database
+
+=> to insert single document
+db.inventory.insertOne(
+   { item: "canvas", qty: 100, tags: ["cotton"], size: { h: 28, w: 35.5, uom: "cm" } }
+)
+
+=> to insert multiple document
+db.inventory.insertMany([
+   { item: "journal", qty: 25, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "notebook", qty: 50, size: { h: 8.5, w: 11, uom: "in" }, status: "A" },
+   { item: "paper", qty: 100, size: { h: 8.5, w: 11, uom: "in" }, status: "D" },
+   { item: "planner", qty: 75, size: { h: 22.85, w: 30, uom: "cm" }, status: "D" },
+   { item: "postcard", qty: 45, size: { h: 10, w: 15.25, uom: "cm" }, status: "A" }
+]);
+
+=>to fetch/see/read all the documents
+db.inventory.find()
+db.inventory.find({})
+
+=> to give find() an identifier/selector/filter
+db.inventory.find( { status: "D" } )
+
+=>where status equals either "A" or "D" 
+db.inventory.find( { status: { $in: [ "A", "D" ] } } )
+
+=> and
+db.inventory.find( { status: "A", qty: { $lt: 30 } } )
+
+=> or
+db.inventory.find( { $or: [ { status: "A" }, { qty: { $lt: 30 } } ] } )
+
+=>where the field tags value is an array with exactly two elements, "red" and "blank", in the specified order
+db.inventory.find( { tags: ["red", "blank"] } )
+
+=> find an array that contains both the elements "red" and "blank", without regard to order or other elements in the array, use the $all operator
+db.inventory.find( { tags: { $all: ["red", "blank"] } } )
+
+//in above array or list is pulled
+
+=> to find only one document
+=> If multiple documents satisfy the query, this method returns the first document according to the natural order which reflects the order of documents on the disk. In capped collections, natural order is the same as insertion order. If no document satisfies the query, the method returns null.
+db.inventory.findOne( { $or: [ { status: "A" }, { qty: { $lt: 30 } } ] } )
+
+
+
+
+db.inventory.insertMany( [
+   { item: "canvas", qty: 100, size: { h: 28, w: 35.5, uom: "cm" }, status: "A" },
+   { item: "journal", qty: 25, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "mat", qty: 85, size: { h: 27.9, w: 35.5, uom: "cm" }, status: "A" },
+   { item: "mousepad", qty: 25, size: { h: 19, w: 22.85, uom: "cm" }, status: "P" },
+   { item: "notebook", qty: 50, size: { h: 8.5, w: 11, uom: "in" }, status: "P" },
+   { item: "paper", qty: 100, size: { h: 8.5, w: 11, uom: "in" }, status: "D" },
+   { item: "planner", qty: 75, size: { h: 22.85, w: 30, uom: "cm" }, status: "D" },
+   { item: "postcard", qty: 45, size: { h: 10, w: 15.25, uom: "cm" }, status: "A" },
+   { item: "sketchbook", qty: 80, size: { h: 14, w: 21, uom: "cm" }, status: "A" },
+   { item: "sketch pad", qty: 95, size: { h: 22.85, w: 30.5, uom: "cm" }, status: "A" }
+] );
+
+
+
+=> method on the inventory collection to update the first document where item equals "paper"
+db.inventory.updateOne(
+   { item: "paper" },
+   {
+     $set: { "size.uom": "cm", status: "P" },
+     $currentDate: { lastModified: true }
+   }
+)
+
+
+=>  to update all documents where qty is less than 50
+db.inventory.updateMany(
+   { "qty": { $lt: 50 } },
+   {
+     $set: { "size.uom": "in", status: "P" },
+     $currentDate: { lastModified: true }
+   }
+)
+
+=>To replace the entire content of a document except for the _id field, pass an entirely new document as the second argument to db.collection.replaceOne()
+db.inventory.replaceOne(
+   { item: "paper" },
+   { item: "paper", instock: [ { warehouse: "A", qty: 60 }, { warehouse: "B", qty: 40 } ] }
+)
+
+
+=> deletes the first document where status is "D"
+db.inventory.deleteOne( { status: "D" } )
+
+=>  deletes all documents from the inventory collection
+db.inventory.deleteMany({})
+
+=>  removes all documents from the inventory collection where the status field equals "A"
+db.inventory.deleteMany({ status : "A" })
+
+=> limits the no. of document in output
+=> we will get first two document
+db.inventory.find().limit(2)
+
+=> we will skip first two document
+db.inventory.find().skip(2)
+
+=> sort in increasing order of quantity
+db.inventory.find().sort({qty:1})
+
+=> sort in decreasing order of quantity
+db.inventory.find().sort({qty:-1})
+
+// eg: pagination in blogs
+   to find blogs for a particular page
+pgn: page number
+no: no. of blogs per page
+
+db.blogs.find().skip((pgn-1)*no).limit(no)
+
+
+############################# Aggregation Pipelines
+=>a set of stages that process documents, and each stage performs an operation on the input documents
+
+db.orders.aggregate( [
+
+   // Stage 1: Filter pizza order documents by pizza size
+   {
+      $match: { size: "medium" }
+   },
+
+   // Stage 2: Group remaining documents by pizza name and calculate total quantity
+   {
+      $group: { _id: "$name", totalQuantity: { $sum: "$quantity" } }
+   }
+
+] )
